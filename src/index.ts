@@ -27,10 +27,8 @@ async function findGuild(guildIdentifier?: string) {
     if (client.guilds.cache.size === 1) {
       return client.guilds.cache.first()!;
     }
-    // List available guilds
-    const guildList = Array.from(client.guilds.cache.values())
-      .map(g => `"${g.name}"`).join(', ');
-    throw new Error(`Bot is in multiple servers. Please specify server name or ID. Available servers: ${guildList}`);
+    // Don't list servers in error to avoid truncation
+    throw new Error(`Bot is in ${client.guilds.cache.size} servers. Use 'list-servers' tool to see available servers, then specify server name or ID.`);
   }
 
   // Try to fetch by ID first
@@ -44,9 +42,7 @@ async function findGuild(guildIdentifier?: string) {
     );
     
     if (guilds.size === 0) {
-      const availableGuilds = Array.from(client.guilds.cache.values())
-        .map(g => `"${g.name}"`).join(', ');
-      throw new Error(`Server "${guildIdentifier}" not found. Available servers: ${availableGuilds}`);
+      throw new Error(`Server "${guildIdentifier}" not found. Use 'list-servers' tool to see available servers.`);
     }
     if (guilds.size > 1) {
       const guildList = guilds.map(g => `${g.name} (ID: ${g.id})`).join(', ');
@@ -77,10 +73,7 @@ async function findChannel(channelIdentifier: string, guildIdentifier?: string):
     );
 
     if (channels.size === 0) {
-      const availableChannels = guild.channels.cache
-        .filter((c): c is TextChannel => c instanceof TextChannel)
-        .map(c => `"#${c.name}"`).join(', ');
-      throw new Error(`Channel "${channelIdentifier}" not found in server "${guild.name}". Available channels: ${availableChannels}`);
+      throw new Error(`Channel "${channelIdentifier}" not found in server "${guild.name}". Use 'list-servers' tool to see available channels.`);
     }
     if (channels.size > 1) {
       const channelList = channels.map(c => `#${c.name} (${c.id})`).join(', ');
@@ -121,6 +114,15 @@ const server = new Server(
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
     tools: [
+      {
+        name: "list-servers",
+        description: "List all Discord servers the bot is connected to",
+        inputSchema: {
+          type: "object",
+          properties: {},
+          required: [],
+        },
+      },
       {
         name: "send-message",
         description: "Send a message to a Discord channel",
@@ -176,9 +178,31 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
   try {
     switch (name) {
+      case "list-servers": {
+        const servers = Array.from(client.guilds.cache.values()).map(guild => ({
+          id: guild.id,
+          name: guild.name,
+          memberCount: guild.memberCount,
+          channels: guild.channels.cache
+            .filter((c): c is TextChannel => c instanceof TextChannel)
+            .map(c => ({
+              id: c.id,
+              name: c.name,
+            }))
+            .slice(0, 10), // Limit to first 10 channels to avoid huge responses
+        }));
+        
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify(servers, null, 2),
+          }],
+        };
+      }
+
       case "send-message": {
-        const { channel: channelIdentifier, message } = SendMessageSchema.parse(args);
-        const channel = await findChannel(channelIdentifier);
+        const { server, channel: channelIdentifier, message } = SendMessageSchema.parse(args);
+        const channel = await findChannel(channelIdentifier, server);
         
         const sent = await channel.send(message);
         return {
@@ -190,8 +214,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case "read-messages": {
-        const { channel: channelIdentifier, limit } = ReadMessagesSchema.parse(args);
-        const channel = await findChannel(channelIdentifier);
+        const { server, channel: channelIdentifier, limit } = ReadMessagesSchema.parse(args);
+        const channel = await findChannel(channelIdentifier, server);
         
         const messages = await channel.messages.fetch({ limit });
         const formattedMessages = Array.from(messages.values()).map(msg => ({
