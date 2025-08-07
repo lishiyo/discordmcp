@@ -23,3 +23,5 @@ dist/
 # OS specific
 .DS_Store
 Thumbs.db
+
+chroma_db_store/
