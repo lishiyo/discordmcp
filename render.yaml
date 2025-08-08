@@ -1,0 +1,18 @@
+services:
+  - type: worker
+    name: discord-mcp-recursive-bot
+    runtime: node
+    region: oregon # You can change this to your preferred region
+    plan: starter # Free tier, upgrade to 'starter-plus' or 'standard' for production
+    buildCommand: npm install && npm run build
+    startCommand: node build/index-with-tools-recursive.js
+    envVars:
+      - key: DISCORD_TOKEN
+        sync: false # Set value in Render dashboard
+      - key: OPENROUTER_API_KEY
+        sync: false # Set value in Render dashboard
+      - key: LLM_MODEL
+        value: openai/gpt-5-mini # Can be overridden in dashboard
+      - key: NODE_ENV
+        value: production
+    autoDeploy: true # Automatically deploy on git push

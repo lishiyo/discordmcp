@@ -51,7 +51,7 @@ async function callLLM(prompt: string, context?: string): Promise<string> {
             content: prompt,
           },
         ],
-        max_tokens: 500,
+        max_tokens: 2500,
         temperature: 0.7,
       }),
     });
@@ -80,7 +80,7 @@ async function callLLM(prompt: string, context?: string): Promise<string> {
             content: prompt,
           },
         ],
-        max_tokens: 500,
+        max_tokens: 2500,
         temperature: 0.7,
       }),
     });
@@ -127,8 +127,61 @@ client.on('messageCreate', async (message: Message) => {
        Respond naturally and helpfully to the user's message.`
     );
 
-    // Send response
-    await message.reply(response);
+    // Handle long messages by splitting them
+    const MAX_LENGTH = 1950; // Leave buffer for Discord's limit
+    
+    if (response.length <= MAX_LENGTH) {
+      // Single message
+      await message.reply(response);
+    } else {
+      // Split into multiple messages
+      console.log(`Response too long (${response.length} chars), splitting into parts...`);
+      
+      const parts = [];
+      let remaining = response;
+      
+      while (remaining.length > 0) {
+        if (remaining.length <= MAX_LENGTH) {
+          parts.push(remaining);
+          break;
+        }
+        
+        // Try to split at a natural break point
+        let splitPoint = MAX_LENGTH;
+        
+        // Look for paragraph break
+        const paragraphBreak = remaining.lastIndexOf('\n\n', MAX_LENGTH);
+        if (paragraphBreak > MAX_LENGTH * 0.5) { // Only if it's not too far back
+          splitPoint = paragraphBreak;
+        } else {
+          // Look for sentence end
+          const sentenceEnd = remaining.lastIndexOf('. ', MAX_LENGTH);
+          if (sentenceEnd > MAX_LENGTH * 0.7) {
+            splitPoint = sentenceEnd + 1; // Include the period
+          } else {
+            // Look for any line break
+            const lineBreak = remaining.lastIndexOf('\n', MAX_LENGTH);
+            if (lineBreak > MAX_LENGTH * 0.7) {
+              splitPoint = lineBreak;
+            }
+          }
+        }
+        
+        parts.push(remaining.substring(0, splitPoint).trim());
+        remaining = remaining.substring(splitPoint).trim();
+      }
+      
+      // Send all parts
+      for (let i = 0; i < parts.length; i++) {
+        const header = parts.length > 1 ? `**[Part ${i + 1}/${parts.length}]**\n\n` : '';
+        await message.reply(header + parts[i]);
+        
+        // Small delay between messages to avoid rate limiting
+        if (i < parts.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      }
+    }
   } catch (error) {
     console.error('Error processing message:', error);
     await message.reply('Sorry, I encountered an error while processing your request.');

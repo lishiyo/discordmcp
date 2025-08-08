@@ -218,11 +218,11 @@ async function callLLMWithTools(prompt: string, context?: string): Promise<strin
   const messages = [
     {
       role: 'system',
-      content: context || `You are AIMI, a helpful AI assistant in Discord. You have access to Discord tools to read messages, list servers, and send messages. Use these tools when users ask you to check channels, read messages, or interact with Discord. IMPORTANT: Keep all responses under 1950 characters to fit Discord's message limit.`,
+      content: context || `You are AIMI, a helpful AI assistant in Discord. You have access to Discord tools to read messages, list servers, and send messages. Use these tools when users ask you to check channels, read messages, or interact with Discord.`,
     },
     {
       role: 'user',
-      content: prompt + '\n\nIMPORTANT: Limit your response to 1950 characters maximum.',
+      content: prompt,
     },
   ];
 
@@ -231,7 +231,7 @@ async function callLLMWithTools(prompt: string, context?: string): Promise<strin
     messages,
     tools: discordTools,
     tool_choice: 'auto', // Let the model decide when to use tools
-    max_tokens: 650,
+    max_tokens: 2500,
     temperature: 0.7,
   };
 
@@ -312,7 +312,7 @@ async function callLLMWithTools(prompt: string, context?: string): Promise<strin
           assistantMessage, // Include the assistant's tool call message
           ...toolResults,   // Include tool results
         ],
-        max_tokens: 650,
+        max_tokens: 2500,
         temperature: 0.7,
       }),
     });
@@ -415,7 +415,6 @@ client.on('messageCreate', async (message: Message) => {
       `You are AIMI, an AI assistant in the "${message.guild?.name || 'DM'}" Discord server.
        You have access to tools to read Discord channels, list servers, and send messages.
        When users ask you to check, read, or summarize channels, use the read_messages tool.
-       IMPORTANT: Keep responses under 1950 characters due to Discord's message limit.
        Recent conversation context:\n${contextMessages}`
     );
 

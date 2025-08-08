@@ -7,6 +7,9 @@
   "scripts": {
     "build": "tsc",
     "start": "node build/index.js",
+    "start:recursive": "node build/index-with-tools-recursive.js",
+    "start:llm": "node build/index-with-llm.js",
+    "start:bot": "node build/discord-bot-with-llm.js",
     "dev": "tsc -w",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
