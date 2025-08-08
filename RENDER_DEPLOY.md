@@ -1,6 +1,6 @@
-# Deploying Discord MCP Recursive Bot to Render
+# Deploying Discord MCP Bot to Render
 
-This guide walks you through deploying your `index-with-tools-recursive.ts` Discord bot to Render.com.
+This guide walks you through deploying your Discord bot with MCP and recursive tool calling to Render.com.
 
 ## Prerequisites
 
@@ -19,12 +19,12 @@ First, ensure your code is compiled and committed:
 npm run build
 
 # Verify the build file exists
-ls -la build/index-with-tools-recursive.js
+ls -la build/index.js
 
 # Commit all changes
 git add .
 git commit -m "Add Render deployment configuration"
-git push origin add-llm  # or your branch name
+git push origin main  # or your branch name
 ```
 
 ## Step 2: Create a Render Account
@@ -38,19 +38,19 @@ git push origin add-llm  # or your branch name
 1. In Render dashboard, click **"New +"** → **"Background Worker"**
 2. Connect your GitHub account if not already connected
 3. Select your `discordmcp` repository
-4. Choose the branch you want to deploy (e.g., `add-llm` or `main`)
+4. Choose the branch you want to deploy (e.g., `main`)
 
 ## Step 4: Configure Your Service
 
 Render should automatically detect the `render.yaml` file. If not, configure manually:
 
 ### Service Settings:
-- **Name**: `discord-mcp-recursive-bot` (or your preferred name)
+- **Name**: `discord-mcp-bot` (or your preferred name)
 - **Region**: Oregon (or closest to you)
 - **Branch**: Your deployment branch
 - **Runtime**: Node
 - **Build Command**: `npm install && npm run build`
-- **Start Command**: `node build/index-with-tools-recursive.js`
+- **Start Command**: `node build/index.js`
 
 ## Step 5: Set Environment Variables
 
@@ -126,7 +126,7 @@ If build fails, check:
 # Locally verify build works
 npm install
 npm run build
-ls -la build/index-with-tools-recursive.js
+ls -la build/index.js
 ```
 
 ### Environment Variable Issues
@@ -138,8 +138,8 @@ ls -la build/index-with-tools-recursive.js
 ### Service Crashes
 
 If service keeps restarting:
-1. Check if `index-with-tools-recursive.ts` exists in src/
-2. Verify the compiled `.js` file exists in build/
+1. Check if `index.ts` exists in src/
+2. Verify the compiled `index.js` file exists in build/
 3. Check Node.js version compatibility (requires 16.x+)
 
 ## Updating Your Bot
@@ -151,7 +151,7 @@ When you make changes:
    npm run build
    git add .
    git commit -m "Update bot functionality"
-   git push origin add-llm
+   git push origin main
    ```
 
 2. **Automatic Deploy**: If `autoDeploy: true` in render.yaml, Render will automatically redeploy
@@ -174,7 +174,7 @@ When you make changes:
 ### Real-time Logs:
 ```bash
 # View logs in Render dashboard or use Render CLI
-render logs discord-mcp-recursive-bot --tail
+render logs discord-mcp-bot --tail
 ```
 
 ### Health Checks:
@@ -225,13 +225,15 @@ If you encounter issues:
 npm run build
 
 # Test locally before deploy
-node build/index-with-tools-recursive.js
+node build/index.js
+# Or use npm start
+npm start
+
+# Test MCP-only version
+npm run start:mcp-only
 
 # Push to GitHub (triggers auto-deploy)
-git push origin add-llm
-
-# View specific start script
-npm run start:recursive
+git push origin main
 ```
 
 Your bot is now deployed and ready to serve your Discord community with advanced LLM capabilities and recursive tool calling support!

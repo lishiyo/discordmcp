@@ -1,11 +1,20 @@
-# Discord MCP Server
+# Discord MCP Server with LLM Bot
 
-A Model Context Protocol (MCP) server that enables LLMs to interact with Discord channels, allowing them to send and read messages through Discord's API. Using this server, LLMs like Claude can directly interact with Discord channels while maintaining user control and security.
+A unified Discord bot that combines Model Context Protocol (MCP) server capabilities with an interactive LLM-powered Discord bot. The bot responds to mentions and DMs while also providing MCP tools for Claude Desktop integration. Features recursive tool calling for complex multi-step operations.
 
 ## Features
 
+### Discord Bot Features
+- **Interactive LLM Bot**: Responds to @mentions and DMs
+- **Recursive Tool Calling**: Handles multi-step Discord operations
+- **Long Message Splitting**: Automatically splits responses over 2000 characters
+- **Context Awareness**: Reads conversation history for better responses
+- **Multi-Model Support**: Works with OpenRouter models (Claude, GPT, Llama, etc.)
+
+### MCP Server Features
 - Send messages to Discord channels
 - Read recent messages from channels
+- List all accessible servers and channels
 - Automatic server and channel discovery
 - Support for both channel names and IDs
 - Proper error handling and validation
@@ -14,10 +23,12 @@ A Model Context Protocol (MCP) server that enables LLMs to interact with Discord
 
 - Node.js 16.x or higher
 - A Discord bot token
+- An OpenRouter API key (for LLM functionality)
 - The bot must be invited to your server with proper permissions:
   - Read Messages/View Channels
   - Send Messages
   - Read Message History
+  - Message Content Intent (enabled in Discord Developer Portal)
 
 ## Setup
 
@@ -32,9 +43,11 @@ cd discordmcp
 npm install
 ```
 
-3. Create a `.env` file in the root directory with your Discord bot token:
+3. Create a `.env` file in the root directory:
 ```
 DISCORD_TOKEN=your_discord_bot_token_here
+OPENROUTER_API_KEY=sk-or-v1-your_key_here
+LLM_MODEL=anthropic/claude-3.5-sonnet  # Optional, defaults to Claude
 ```
 
 4. Build the server:
@@ -42,7 +55,31 @@ DISCORD_TOKEN=your_discord_bot_token_here
 npm run build
 ```
 
-## Usage with Claude for Desktop
+## Running the Bot
+
+### Start the Full-Featured Bot (Recommended)
+```bash
+npm start
+# or
+node build/index.js
+```
+
+This runs the main bot with:
+- Discord bot that responds to mentions/DMs
+- MCP server for Claude Desktop
+- Recursive tool calling support
+- LLM integration via OpenRouter
+
+### MCP-Only Mode (No Discord Bot)
+```bash
+npm run start:mcp-only
+# or
+node build/index-mcp-only.js
+```
+
+This runs only the MCP server without the Discord bot features.
+
+## Usage with Claude Desktop
 
 1. Open your Claude for Desktop configuration file:
    - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
@@ -66,6 +103,23 @@ npm run build
 3. Restart Claude for Desktop
 
 ## Available Tools
+
+### list-servers
+Lists all Discord servers the bot has access to.
+
+No parameters required.
+
+Example response:
+```json
+[
+  {
+    "name": "My Server",
+    "id": "123456789",
+    "memberCount": 42,
+    "channels": ["#general", "#random"]
+  }
+]
+```
 
 ### send-message
 Sends a message to a specified Discord channel.
@@ -99,6 +153,23 @@ Example:
 }
 ```
 
+## Discord Bot Usage
+
+The bot responds to:
+1. **@mentions in channels**: `@YourBot what's the weather?`
+2. **Direct messages**: Just DM the bot directly
+3. **Tool usage**: `@YourBot read the last 10 messages in #general`
+
+### Supported LLM Models
+
+Configure via `LLM_MODEL` environment variable:
+- `anthropic/claude-3.5-sonnet` (default)
+- `openai/gpt-4-turbo` 
+- `openai/gpt-5-mini`
+- `openai/gpt-oss-120b`
+- `meta-llama/llama-3.1-70b-instruct`
+- `google/gemini-pro`
+
 ## Development
 
 1. Install development dependencies:
@@ -111,6 +182,13 @@ npm install --save-dev typescript @types/node
 npm run dev
 ```
 
+3. Project structure:
+```
+src/
+├── index.ts           # Main bot with MCP + Discord bot + recursive tools
+└── index-mcp-only.ts  # MCP server only (no Discord bot)
+```
+
 ## Testing
 
 You can test the server using the MCP Inspector:
@@ -121,21 +199,39 @@ npx @modelcontextprotocol/inspector node build/index.js
 
 ## Examples
 
-Here are some example interactions you can try with Claude after setting up the Discord MCP server:
+### Direct Bot Interactions (Discord)
+1. **Simple chat**: `@YourBot tell me a joke`
+2. **Read messages**: `@YourBot summarize the last 20 messages in #general`
+3. **Cross-channel operations**: `@YourBot check #bugs and post a summary in #dev-team`
+4. **Server listing**: `@YourBot list all channels you can see`
 
+### MCP Tool Usage (Claude Desktop)
 1. "Can you read the last 5 messages from the general channel?"
 2. "Please send a message to the announcements channel saying 'Meeting starts in 10 minutes'"
 3. "What were the most recent messages in the development channel about the latest release?"
+4. "List all Discord servers the bot has access to"
 
-Claude will use the appropriate tools to interact with Discord while asking for your approval before sending any messages.
+The bot handles recursive operations automatically, so complex multi-step requests work seamlessly.
+
+## Deployment
+
+See [RENDER_DEPLOY.md](RENDER_DEPLOY.md) for detailed deployment instructions to Render.com.
+
+Quick deploy with Render:
+1. Push to GitHub
+2. Connect repository to Render
+3. Set environment variables
+4. Deploy!
 
 ## Security Considerations
 
 - The bot requires proper Discord permissions to function
-- All message sending operations require explicit user approval
+- All message sending operations through MCP require explicit user approval
 - Environment variables should be properly secured
-- Token should never be committed to version control
+- Tokens should never be committed to version control
 - Channel access is limited to channels the bot has been given access to
+- OpenRouter API key should be kept secure
+- Enable only necessary Discord intents
 
 ## Contributing
 

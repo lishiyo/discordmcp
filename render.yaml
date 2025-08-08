@@ -1,11 +1,11 @@
 services:
   - type: worker
-    name: discord-mcp-recursive-bot
+    name: discord-mcp-bot
     runtime: node
     region: oregon # You can change this to your preferred region
     plan: starter # Free tier, upgrade to 'starter-plus' or 'standard' for production
     buildCommand: npm install && npm run build
-    startCommand: node build/index-with-tools-recursive.js
+    startCommand: node build/index.js
     envVars:
       - key: DISCORD_TOKEN
         sync: false # Set value in Render dashboard
